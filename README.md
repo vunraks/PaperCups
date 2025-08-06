@@ -29,24 +29,21 @@
 
 ## 📸 Скриншоты системы
 
-### Главная страница с каталогом продуктов
 ![Каталог стаканчиков](https://github.com/user-attachments/assets/dee74e2a-a824-4e98-8466-69e6457b7d69)
 
-### Детальная карточка продукта
+
 ![Детали продукта](https://github.com/user-attachments/assets/d41d8243-dc80-477c-8640-f6d889ccd66d)
 
-### Система управления заказами
 ![Управление заказами](https://github.com/user-attachments/assets/36118f98-a2a5-4f45-9f73-fd1f268cbc05)
 
-### Мониторинг торговых автоматов
+
 ![Торговые автоматы](https://github.com/user-attachments/assets/473bb7ec-67dc-4384-931f-761625ebe968)
 
-### Панель аналитики
+
 ![Аналитика](https://github.com/user-attachments/assets/7e77973a-2a50-4665-adb3-9fa59d4c769a)
 
-### Административная панель
-![Админ панель](https://github.com/user-attachments/assets/707f8e36-6e6a-4a46-a443-890abc0ccc48)
 
+![Админ панель](https://github.com/user-attachments/assets/707f8e36-6e6a-4a46-a443-890abc0ccc48)
 ## 📋 Реализованный функционал
 
 ### 🛍️ Каталог продукции
@@ -73,201 +70,15 @@
 - Генерация отчетов
 - Настройка системы
 
-## 🗄️ ERD и структура базы данных
+📞 Поддержка
+Канал: #cup-support в Slack
 
-ERD диаграмма проекта разработана в Figma и включает основные сущности:
-- **Products** - каталог продукции (стаканчики)
-- **VendingMachines** - торговые автоматы и их характеристики
-- **Orders** - заказы на пополнение
-- **Suppliers** - поставщики продукции
-- **Users** - пользователи системы с ролями
+Email: support@cupsystem.local
 
-## 🏗️ Структура проекта
+GitHub Issues для багов и запросов
 
-```
-cup-supply-system/
-├── cup_supply/                # Django проект
-│   ├── settings/
-│   ├── urls.py
-│   └── wsgi.py
-├── apps/
-│   ├── products/             # Управление каталогом
-│   ├── machines/             # Торговые автоматы
-│   ├── orders/               # Система заказов
-│   └── users/               # Пользователи
-├── static/
-│   ├── css/
-│   ├── js/
-│   └── images/
-├── templates/
-├── media/                   # Загруженные файлы
-├── docs/                    # Документация проекта
-└── requirements.txt
-```
+💡 Pull Requests:
+✅ Все изменения проходят ревью
+✅ Обязательные CI-проверки
+✅ Связаны с задачами Kanban-доски
 
-## 🛠️ Установка и запуск
-
-### Предварительные требования
-- Python 3.8+
-- Git
-- Текстовый редактор (VS Code, PyCharm)
-
-### Клонирование и настройка
-
-1. **Клонирование репозитория**
-   ```bash
-   git clone https://github.com/your-team/cup-supply-system.git
-   cd cup-supply-system
-   ```
-
-2. **Создание виртуального окружения**
-   ```bash
-   python -m venv env
-   source env/bin/activate  # Linux/Mac
-   # или
-   env\Scripts\activate     # Windows
-   ```
-
-3. **Установка зависимостей**
-   ```bash
-   pip install -r requirements.txt
-   ```
-
-4. **Настройка базы данных**
-   ```bash
-   python manage.py makemigrations
-   python manage.py migrate
-   python manage.py createsuperuser
-   ```
-
-5. **Загрузка тестовых данных** (опционально)
-   ```bash
-   python manage.py loaddata fixtures/initial_data.json
-   ```
-
-6. **Запуск сервера разработки**
-   ```bash
-   python manage.py runserver
-   ```
-
-Система будет доступна по адресу: `http://127.0.0.1:8000/`
-
-## 🔧 Конфигурация
-
-## 🔧 Разработка
-
-### Git workflow
-Каждый этап разработки обязательно фиксируется в Git:
-
-```bash
-# Создание новой ветки для функции
-git checkout -b feature/product-catalog
-
-# Коммиты с описательными сообщениями
-git add .
-git commit -m "Add product catalog with filtering functionality"
-
-# Пуш изменений
-git push origin feature/product-catalog
-```
-
-### Этапы разработки (все в Git)
-1. **Планирование** - создание ERD в Figma
-2. **Настройка проекта** - инициализация Django
-3. **Модели данных** - создание моделей и миграций
-4. **Административная панель** - настройка Django Admin
-5. **Веб-интерфейс** - создание шаблонов и стилей
-6. **Функциональность** - реализация бизнес-логики
-7. **Тестирование** - написание тестов
-8. **Документация** - создание документации
-
-### Команда и роли
-- **Backend Developer** - Django модели, views, admin
-- **Frontend Developer** - HTML/CSS/JS, адаптивность
-- **Full-stack Developer** - интеграция frontend/backend
-- **DevOps/QA** - тестирование, деплой, документация
-
-## 📚 Документация
-
-### Файлы документации
-- `docs/ERD.md` - описание структуры базы данных
-- `docs/API.md` - документация API эндпоинтов
-- `docs/USER_GUIDE.md` - руководство пользователя
-- `docs/DEPLOYMENT.md` - инструкции по развертыванию
-
-### Основные URL маршруты
-- `/` - главная страница с каталогом
-- `/products/` - список продуктов
-- `/machines/` - управление автоматами
-- `/orders/` - система заказов
-- `/admin/` - административная панель Django
-
-## 🧪 Тестирование
-
-```bash
-# Запуск всех тестов
-python manage.py test
-
-# Запуск тестов конкретного приложения
-python manage.py test apps.products
-
-# Проверка покрытия кода
-coverage run --source='.' manage.py test
-coverage report
-```
-
-## 🚀 Деплой
-
-## 🚀 Деплой
-
-### Подготовка к продакшену
-```bash
-# Сбор статических файлов
-python manage.py collectstatic
-
-# Применение миграций
-python manage.py migrate
-
-# Создание суперпользователя (если необходимо)
-python manage.py createsuperuser
-```
-
-## 📈 Текущее состояние
-
-### ✅ Реализовано
-- [x] ERD диаграмма в Figma
-- [x] Django модели для всех сущностей
-- [x] Административная панель
-- [x] Каталог продуктов с фильтрацией
-- [x] Система управления автоматами
-- [x] Интерфейс заказов
-- [x] Адаптивный дизайн
-- [x] Базовая аналитика
-
-### 🔄 В разработке
-- [ ] API для мобильного приложения
-- [ ] Система уведомлений
-- [ ] Расширенная аналитика
-- [ ] Интеграция с внешними системами
-
-## 👥 Команда проекта
-
-Проект разрабатывается агильной командой из 4 специалистов:
-
-| Роль | Ответственность |
-|------|----------------|
-| Backend Developer | Django модели, бизнес-логика, admin панель |
-| Frontend Developer | HTML/CSS/JS, пользовательский интерфейс |
-| Full-stack Developer | Интеграция компонентов, тестирование |
-| DevOps/Documentation | Git workflow, документация, деплой |
-
-## 📞 Поддержка
-
-При возникновении вопросов или проблем:
-1. Проверьте документацию в папке `docs/`
-2. Создайте Issue в репозитории
-3. Обратитесь к команде разработки
-
----
-
-🔗 **Важно**: Все изменения должны проходить через Pull Request с обязательным code review!
