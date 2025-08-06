@@ -464,7 +464,10 @@ footer {
 .text-right {
   text-align: right;
 }
-
+input, textarea, select {
+    background-color: #ffffff; /* Белый фон */
+color: black;
+}
 .quantity-control input {
   width: 50px;
   text-align: center;
