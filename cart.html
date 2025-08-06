@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Корзина - EcoCups</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header>
+        <div class="logo">EcoCups</div>
+        <nav>
+            <ul>
+                <li><a href="index.html">Главная</a></li>
+                <li><a href="products.html">Товары</a></li>
+                <li><a href="about.html">О нас</a></li>
+                <li><a href="contacts.html">Контакты</a></li>
+                <li><a href="cart.html" class="active">Корзина (<span id="cart-count">0</span>)</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <main>
+        <h1>Ваша корзина</h1>
+        
+        <div class="cart-container">
+            <div class="cart-items">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Товар</th>
+                            <th>Цена</th>
+                            <th>Количество</th>
+                            <th>Сумма</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody id="cart-items">
+                        <!-- Тут будут отображаться товары -->
+                        <tr class="empty-cart">
+                            <td colspan="5">Ваша корзина пуста</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            
+            <div class="cart-summary">
+                <h3>Итого</h3>
+                <div class="summary-row">
+                    <span>Товаров:</span>
+                    <span id="total-items">0</span>
+                </div>
+                <div class="summary-row">
+                    <span>Общая сумма:</span>
+                    <span id="total-price">0 руб.</span>
+                </div>
+                <button id="checkout-btn" disabled>Оформить заказ</button>
+                <a href="products.html" class="continue-shopping">Продолжить покупки</a>
+            </div>
+        </div>
+    </main>
+
+    <footer>
+        <p>&copy; 2023 EcoCups. Все права защищены.</p>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html>

@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Регистрация - EcoCups</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header>
+        <div class="logo">EcoCups</div>
+        <nav>
+            <ul>
+                <li><a href="index.html">Главная</a></li>
+                <li><a href="products.html">Товары</a></li>
+                <li><a href="about.html">О нас</a></li>
+                <li><a href="contacts.html">Контакты</a></li>
+                <li><a href="login.html">Вход</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <main class="auth-container">
+        <div class="auth-form">
+            <h1>Создать аккаунт</h1>
+            
+            <form id="register-form">
+                <div class="form-group">
+                    <label for="name">Имя</label>
+                    <input type="text" id="name" name="name" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="email">Email</label>
+                    <input type="email" id="email" name="email" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="phone">Телефон</label>
+                    <input type="tel" id="phone" name="phone" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="password">Пароль</label>
+                    <input type="password" id="password" name="password" minlength="6" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="confirm-password">Подтвердите пароль</label>
+                    <input type="password" id="confirm-password" name="confirm-password" minlength="6" required>
+                </div>
+                
+                <div class="form-group checkbox-group">
+                    <input type="checkbox" id="agree-terms" name="agree-terms" required>
+                    <label for="agree-terms">Я согласен с <a href="#">условиями использования</a> и <a href="#">политикой конфиденциальности</a></label>
+                </div>
+                
+                <button type="submit" class="btn btn-primary">Зарегистрироваться</button>
+            </form>
+            
+            <div class="auth-links">
+                Уже есть аккаунт? <a href="login.html">Войти</a>
+            </div>
+        </div>
+        
+        <div class="auth-benefits">
+            <h2>Преимущества регистрации</h2>
+            <ul>
+                <li>История заказов</li>
+                <li>Быстрое оформление покупок</li>
+                <li>Персональные скидки</li>
+                <li>Отслеживание доставки</li>
+                <li>Доступ к спецпредложениям</li>
+            </ul>
+        </div>
+    </main>
+
+    <footer>
+        <p>&copy; 2023 EcoCups. Все права защищены.</p>
+    </footer>
+
+    <script src="auth.js"></script>
+</body>
+</html>
