@@ -5,21 +5,30 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>EcoCups - Бумажные стаканчики</title>
     <link rel="stylesheet" href="styles.css">
+    <link rel="icon" type="image/png" href="images/logo.png">
 </head>
 <body>
-    <header>
-        <div class="logo">EcoCups</div>
-        <nav>
-            <ul>
-                <li><a href="index.html">Главная</a></li>
-                <li><a href="products.html">Товары</a></li>
-                <li><a href="about.html">О нас</a></li>
-                <li><a href="contacts.html">Контакты</a></li>
-                <li><a href="cart.html">Корзина (<span id="cart-count">0</span>)</a></li>
-                <li><a href="login.html">Войти</a></li>
-            </ul>
-        </nav>
-    </header>
+<header>
+  <a href="index.html" class="logo">Eco<span>Cups</span></a>
+<nav class="nav-container">
+  <ul class="nav-center">
+    <li><a href="index.html">Главная</a></li>
+    <li><a href="products.html">Товары</a></li>
+    <li><a href="about.html">О нас</a></li>
+    <li><a href="contacts.html">Контакты</a></li>
+  </ul>
+  <ul class="nav-right">
+    <li>
+      <a href="cart.html">
+        <i class="fas fa-shopping-cart cart-icon"></i>
+        Корзина (<span id="cart-count">0</span>)
+      </a>
+    </li>
+    <li><a href="login.html" class="login-btn">Войти</a></li>
+  </ul>
+</nav>
+
+</header>
 
     <main>
         <section class="hero">
