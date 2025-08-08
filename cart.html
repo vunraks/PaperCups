@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Корзина - EcoCups</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        .cart-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .cart-items {
+            background: white;
+            border-radius: 10px;
+            padding: 30px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        
+        .cart-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        .cart-table th,
+        .cart-table td {
+            padding: 15px;
+            text-align: left;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .cart-table th {
+            background: #f8f9fa;
+            font-weight: bold;
+        }
+        
+        .product-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .product-image {
+            width: 60px;
+            height: 60px;
+            object-fit: cover;
+            border-radius: 5px;
+        }
+        
+        .product-name {
+            font-weight: bold;
+            color: #333;
+        }
+        
+        .quantity-control {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .quantity-btn {
+            background: #007bff;
+            color: white;
+            border: none;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .quantity-btn:hover {
+            background: #0056b3;
+        }
+        
+        .quantity-input {
+            width: 60px;
+            text-align: center;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 5px;
+        }
+        
+        .remove-btn {
+            background: #dc3545;
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        
+        .remove-btn:hover {
+            background: #c82333;
+        }
+        
+        .cart-summary {
+            background: white;
+            border-radius: 10px;
+            padding: 30px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .summary-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 15px;
+            font-size: 16px;
+        }
+        
+        .summary-row.total {
+            font-size: 20px;
+            font-weight: bold;
+            color: #007bff;
+            border-top: 2px solid #007bff;
+            padding-top: 15px;
+        }
+        
+        .checkout-btn {
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            width: 100%;
+            margin-bottom: 15px;
+        }
+        
+        .checkout-btn:hover {
+            background: #218838;
+        }
+        
+        .checkout-btn:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+        }
+        
+        .continue-shopping {
+            display: block;
+            text-align: center;
+            color: #007bff;
+            text-decoration: none;
+            font-size: 14px;
+        }
+        
+        .continue-shopping:hover {
+            text-decoration: underline;
+        }
+        
+        .empty-cart {
+            text-align: center;
+            padding: 60px 20px;
+            color: #666;
+        }
+        
+        .empty-cart h3 {
+            margin-bottom: 15px;
+            color: #333;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+        
+        .error-message {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+        
+        .auth-required {
+            text-align: center;
+            padding: 40px;
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+        
+        .auth-required h3 {
+            color: #856404;
+            margin-bottom: 15px;
+        }
+        
+        .auth-required p {
+            color: #856404;
+            margin-bottom: 20px;
+        }
+        
+        .auth-btn {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+        }
+        
+        .auth-btn:hover {
+            background: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="logo">EcoCups</div>
+        <nav>
+            <ul>
+                <li><a href="index.html">Главная</a></li>
+                <li><a href="products.html">Товары</a></li>
+                <li><a href="about.html">О нас</a></li>
+                <li><a href="contacts.html">Контакты</a></li>
+                <li><a href="cart.html" class="active">Корзина (<span id="cart-count">0</span>)</a></li>
+                <li><a href="login.html">Войти</a></li>
+                <li><a href="register.html">Регистрация</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <main class="cart-container">
+        <h1>Ваша корзина</h1>
+        
+        <div id="auth-required" class="auth-required" style="display: none;">
+            <h3>Требуется авторизация</h3>
+            <p>Для просмотра корзины необходимо войти в систему</p>
+            <a href="login.html" class="auth-btn">Войти</a>
+            <a href="register.html" class="auth-btn" style="margin-left: 10px;">Регистрация</a>
+        </div>
+        
+        <div id="cart-content" style="display: none;">
+            <div class="cart-items">
+                <div id="cart-loading" class="loading">Загрузка корзины...</div>
+                <div id="cart-items-container" style="display: none;">
+                    <table class="cart-table">
+                        <thead>
+                            <tr>
+                                <th>Товар</th>
+                                <th>Цена</th>
+                                <th>Количество</th>
+                                <th>Сумма</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody id="cart-items-list">
+                            <!-- Товары будут загружены динамически -->
+                        </tbody>
+                    </table>
+                </div>
+                <div id="empty-cart" class="empty-cart" style="display: none;">
+                    <h3>Ваша корзина пуста</h3>
+                    <p>Добавьте товары из каталога</p>
+                    <a href="products.html" class="btn">Перейти к товарам</a>
+                </div>
+            </div>
+            
+            <div class="cart-summary">
+                <h3>Итого</h3>
+                <div class="summary-row">
+                    <span>Товаров:</span>
+                    <span id="total-items">0</span>
+                </div>
+                <div class="summary-row total">
+                    <span>Общая сумма:</span>
+                    <span id="total-price">0 руб.</span>
+                </div>
+                <button id="checkout-btn" class="checkout-btn" disabled>Оформить заказ</button>
+                <a href="products.html" class="continue-shopping">Продолжить покупки</a>
+            </div>
+        </div>
+    </main>
+
+    <footer>
+        <p>&copy; 2023 EcoCups. Все права защищены.</p>
+    </footer>
+
+    <script src="auth.js"></script>
+    <script>
+        const API_BASE_URL = "http://127.0.0.1:8000/api";
+        
+        // Проверка аутентификации
+        function checkAuth() {
+            const token = localStorage.getItem('access_token');
+            return !!token;
+        }
+        
+        // Загрузка корзины
+        async function loadCart() {
+            if (!checkAuth()) {
+                document.getElementById('auth-required').style.display = 'block';
+                document.getElementById('cart-content').style.display = 'none';
+                return;
+            }
+            
+            document.getElementById('auth-required').style.display = 'none';
+            document.getElementById('cart-content').style.display = 'block';
+            
+            try {
+                const response = await fetch(`${API_BASE_URL}/cart/`, {
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('access_token')}`
+                    }
+                });
+                
+                if (!response.ok) {
+                    throw new Error('Ошибка загрузки корзины');
+                }
+                
+                const cartItems = await response.json();
+                displayCart(cartItems);
+            } catch (error) {
+                console.error('Error loading cart:', error);
+                showError('Ошибка загрузки корзины. Попробуйте войти заново.');
+            }
+        }
+        
+        // Отображение корзины
+        function displayCart(cartItems) {
+            const cartItemsList = document.getElementById('cart-items-list');
+            const cartItemsContainer = document.getElementById('cart-items-container');
+            const emptyCart = document.getElementById('empty-cart');
+            const loading = document.getElementById('cart-loading');
+            
+            loading.style.display = 'none';
+            
+            if (cartItems.length === 0) {
+                cartItemsContainer.style.display = 'none';
+                emptyCart.style.display = 'block';
+                updateSummary(0, 0);
+                return;
+            }
+            
+            cartItemsContainer.style.display = 'block';
+            emptyCart.style.display = 'none';
+            
+            cartItemsList.innerHTML = cartItems.map(item => `
+                <tr data-cart-item-id="${item.id}">
+                    <td>
+                        <div class="product-info">
+                            <img src="images/${item.image}" alt="${item.name}" class="product-image">
+                            <div>
+                                <div class="product-name">${item.name}</div>
+                            </div>
+                        </div>
+                    </td>
+                    <td>${item.price} руб.</td>
+                    <td>
+                        <div class="quantity-control">
+                            <button class="quantity-btn" onclick="updateQuantity(${item.id}, -1)">-</button>
+                            <input type="number" value="${item.quantity}" min="1" class="quantity-input" 
+                                   onchange="setQuantity(${item.id}, this.value)">
+                            <button class="quantity-btn" onclick="updateQuantity(${item.id}, 1)">+</button>
+                        </div>
+                    </td>
+                    <td class="item-total">${item.total} руб.</td>
+                    <td>
+                        <button class="remove-btn" onclick="removeFromCart(${item.id})">Удалить</button>
+                    </td>
+                </tr>
+            `).join('');
+            
+            const totalItems = cartItems.reduce((sum, item) => sum + item.quantity, 0);
+            const totalPrice = cartItems.reduce((sum, item) => sum + item.total, 0);
+            updateSummary(totalItems, totalPrice);
+        }
+        
+        // Обновление количества товара
+        async function updateQuantity(cartItemId, change) {
+            try {
+                const row = document.querySelector(`tr[data-cart-item-id="${cartItemId}"]`);
+                const input = row.querySelector('.quantity-input');
+                const newQuantity = parseInt(input.value) + change;
+                
+                if (newQuantity < 1) {
+                    await removeFromCart(cartItemId);
+                    return;
+                }
+                
+                await setQuantity(cartItemId, newQuantity);
+            } catch (error) {
+                console.error('Error updating quantity:', error);
+                alert('Ошибка обновления количества');
+            }
+        }
+        
+        // Установка количества товара
+        async function setQuantity(cartItemId, quantity) {
+            try {
+                const response = await fetch(`${API_BASE_URL}/cart/${cartItemId}/`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('access_token')}`
+                    },
+                    body: JSON.stringify({ quantity: parseInt(quantity) })
+                });
+                
+                if (!response.ok) {
+                    throw new Error('Ошибка обновления количества');
+                }
+                
+                // Перезагружаем корзину
+                await loadCart();
+            } catch (error) {
+                console.error('Error setting quantity:', error);
+                alert('Ошибка обновления количества');
+            }
+        }
+        
+        // Удаление товара из корзины
+        async function removeFromCart(cartItemId) {
+            if (!confirm('Удалить товар из корзины?')) {
+                return;
+            }
+            
+            try {
+                const response = await fetch(`${API_BASE_URL}/cart/${cartItemId}/`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('access_token')}`
+                    }
+                });
+                
+                if (!response.ok) {
+                    throw new Error('Ошибка удаления товара');
+                }
+                
+                // Перезагружаем корзину
+                await loadCart();
+            } catch (error) {
+                console.error('Error removing item:', error);
+                alert('Ошибка удаления товара');
+            }
+        }
+        
+        // Обновление итогов
+        function updateSummary(totalItems, totalPrice) {
+            document.getElementById('total-items').textContent = totalItems;
+            document.getElementById('total-price').textContent = `${totalPrice} руб.`;
+            
+            const checkoutBtn = document.getElementById('checkout-btn');
+            checkoutBtn.disabled = totalItems === 0;
+        }
+        
+        // Оформление заказа
+        async function checkout() {
+            if (!checkAuth()) {
+                alert('Для оформления заказа необходимо войти в систему');
+                window.location.href = 'login.html';
+                return;
+            }
+            
+            const shippingAddress = prompt('Введите адрес доставки:');
+            if (!shippingAddress) {
+                alert('Адрес доставки обязателен');
+                return;
+            }
+            
+            const phone = prompt('Введите номер телефона для связи:');
+            if (!phone) {
+                alert('Номер телефона обязателен');
+                return;
+            }
+            
+            try {
+                const response = await fetch(`${API_BASE_URL}/orders/`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('access_token')}`
+                    },
+                    body: JSON.stringify({
+                        shipping_address: shippingAddress,
+                        phone: phone
+                    })
+                });
+                
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.error || 'Ошибка создания заказа');
+                }
+                
+                const orderResult = await response.json();
+                
+                alert(`Заказ №${orderResult.order_id} успешно оформлен! Сумма: ${orderResult.total_amount} руб.`);
+                
+                // Перезагружаем корзину (она должна быть пустой)
+                await loadCart();
+                
+            } catch (error) {
+                alert(`Ошибка оформления заказа: ${error.message}`);
+            }
+        }
+        
+        // Показ ошибки
+        function showError(message) {
+            const cartItemsContainer = document.getElementById('cart-items-container');
+            cartItemsContainer.innerHTML = `<div class="error-message">${message}</div>`;
+        }
+        
+        // Инициализация
+        document.addEventListener('DOMContentLoaded', function() {
+            loadCart();
+            
+            // Обработчик кнопки оформления заказа
+            document.getElementById('checkout-btn').addEventListener('click', checkout);
+        });
+    </script>
+</body>
+</html>

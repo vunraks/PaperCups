@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Отладка корзины - EcoCups</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .debug-section { margin: 20px 0; padding: 15px; border: 1px solid #ccc; }
+        button { padding: 10px 15px; margin: 5px; background: #007bff; color: white; border: none; cursor: pointer; }
+        button:hover { background: #0056b3; }
+        .log { background: #f8f9fa; padding: 10px; margin: 10px 0; border-radius: 4px; font-family: monospace; }
+        .error { background: #f8d7da; color: #721c24; }
+        .success { background: #d4edda; color: #155724; }
+        .product-card { border: 1px solid #ddd; padding: 15px; margin: 10px 0; border-radius: 5px; }
+        .auth-status { padding: 10px; margin: 10px 0; border-radius: 4px; }
+        .auth-logged-in { background: #d4edda; color: #155724; }
+        .auth-logged-out { background: #f8d7da; color: #721c24; }
+    </style>
+</head>
+<body>
+    <h1>Отладка корзины</h1>
+    
+    <div class="debug-section">
+        <h2>Статус аутентификации</h2>
+        <div id="auth-status" class="auth-status"></div>
+        <button onclick="checkAuthStatus()">Проверить статус</button>
+        <button onclick="loginTest()">Тест входа</button>
+        <button onclick="logout()">Выйти</button>
+    </div>
+    
+    <div class="debug-section">
+        <h2>Тестовые товары</h2>
+        <div id="test-products">
+            <div class="product-card">
+                <h3>Стаканчик 200мл</h3>
+                <p>Цена: 5 руб.</p>
+                <button onclick="addToCartTest(1, 'Стаканчик 200мл', 5)">Добавить в корзину</button>
+            </div>
+            <div class="product-card">
+                <h3>Стаканчик 300мл</h3>
+                <p>Цена: 7 руб.</p>
+                <button onclick="addToCartTest(2, 'Стаканчик 300мл', 7)">Добавить в корзину</button>
+            </div>
+            <div class="product-card">
+                <h3>Стаканчик 400мл</h3>
+                <p>Цена: 9 руб.</p>
+                <button onclick="addToCartTest(3, 'Стаканчик 400мл', 9)">Добавить в корзину</button>
+            </div>
+        </div>
+    </div>
+    
+    <div class="debug-section">
+        <h2>Операции с корзиной</h2>
+        <button onclick="getCartTest()">Получить корзину</button>
+        <button onclick="clearCartTest()">Очистить корзину</button>
+        <button onclick="createOrderTest()">Создать заказ</button>
+    </div>
+    
+    <div class="debug-section">
+        <h2>Логи</h2>
+        <div id="logs"></div>
+        <button onclick="clearLogs()">Очистить логи</button>
+    </div>
+
+    <script>
+        const API_BASE_URL = "http://127.0.0.1:8000/api";
+        
+        function log(message, type = 'info') {
+            const logsDiv = document.getElementById('logs');
+            const logDiv = document.createElement('div');
+            logDiv.className = `log ${type}`;
+            logDiv.innerHTML = `<strong>[${new Date().toLocaleTimeString()}]</strong> ${message}`;
+            logsDiv.appendChild(logDiv);
+            logsDiv.scrollTop = logsDiv.scrollHeight;
+        }
+        
+        function clearLogs() {
+            document.getElementById('logs').innerHTML = '';
+        }
+        
+        function checkAuthStatus() {
+            const token = localStorage.getItem('access_token');
+            const statusDiv = document.getElementById('auth-status');
+            
+            if (token) {
+                statusDiv.className = 'auth-status auth-logged-in';
+                statusDiv.textContent = '✅ Авторизован';
+                log('Пользователь авторизован', 'success');
+            } else {
+                statusDiv.className = 'auth-status auth-logged-out';
+                statusDiv.textContent = '❌ Не авторизован';
+                log('Пользователь не авторизован', 'error');
+            }
+        }
+        
+        async function loginTest() {
+            try {
+                log('Попытка входа...');
+                
+                const response = await fetch(`${API_BASE_URL}/login/`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        email: 'test@test.com',
+                        password: 'password'
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    localStorage.setItem('access_token', data.access);
+                    localStorage.setItem('refresh_token', data.refresh);
+                    log('Вход выполнен успешно', 'success');
+                    checkAuthStatus();
+                } else {
+                    log(`Ошибка входа: ${data.error}`, 'error');
+                }
+            } catch (error) {
+                log(`Ошибка входа: ${error.message}`, 'error');
+            }
+        }
+        
+        function logout() {
+            localStorage.removeItem('access_token');
+            localStorage.removeItem('refresh_token');
+            log('Выход выполнен', 'info');
+            checkAuthStatus();
+        }
+        
+        async function addToCartTest(productId, productName, price) {
+            try {
+                log(`Попытка добавления товара: ${productName} (ID: ${productId})`);
+                
+                const token = localStorage.getItem('access_token');
+                if (!token) {
+                    log('Ошибка: не авторизован', 'error');
+                    return;
+                }
+                
+                const response = await fetch(`${API_BASE_URL}/cart/`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({
+                        product_id: productId,
+                        quantity: 1
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    log(`Товар добавлен в корзину: ${productName}`, 'success');
+                } else {
+                    log(`Ошибка добавления в корзину: ${data.error}`, 'error');
+                }
+            } catch (error) {
+                log(`Ошибка добавления в корзину: ${error.message}`, 'error');
+            }
+        }
+        
+        async function getCartTest() {
+            try {
+                log('Получение корзины...');
+                
+                const token = localStorage.getItem('access_token');
+                if (!token) {
+                    log('Ошибка: не авторизован', 'error');
+                    return;
+                }
+                
+                const response = await fetch(`${API_BASE_URL}/cart/`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    log(`Корзина получена. Товаров: ${data.length}`, 'success');
+                    data.forEach(item => {
+                        log(`- ${item.name}: ${item.quantity} шт. × ${item.price} руб. = ${item.total} руб.`);
+                    });
+                } else {
+                    log(`Ошибка получения корзины: ${data.error}`, 'error');
+                }
+            } catch (error) {
+                log(`Ошибка получения корзины: ${error.message}`, 'error');
+            }
+        }
+        
+        async function clearCartTest() {
+            try {
+                log('Очистка корзины...');
+                
+                const token = localStorage.getItem('access_token');
+                if (!token) {
+                    log('Ошибка: не авторизован', 'error');
+                    return;
+                }
+                
+                // Получаем корзину и удаляем все товары
+                const response = await fetch(`${API_BASE_URL}/cart/`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                
+                if (response.ok) {
+                    const cartItems = await response.json();
+                    for (const item of cartItems) {
+                        await fetch(`${API_BASE_URL}/cart/${item.id}/`, {
+                            method: 'DELETE',
+                            headers: {
+                                'Authorization': `Bearer ${token}`
+                            }
+                        });
+                    }
+                    log('Корзина очищена', 'success');
+                }
+            } catch (error) {
+                log(`Ошибка очистки корзины: ${error.message}`, 'error');
+            }
+        }
+        
+        async function createOrderTest() {
+            try {
+                log('Создание заказа...');
+                
+                const token = localStorage.getItem('access_token');
+                if (!token) {
+                    log('Ошибка: не авторизован', 'error');
+                    return;
+                }
+                
+                const response = await fetch(`${API_BASE_URL}/orders/`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({
+                        shipping_address: 'Тестовый адрес доставки',
+                        phone: '+7 999 123-45-67'
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    log(`Заказ создан успешно. ID: ${data.order_id}, Сумма: ${data.total_amount} руб.`, 'success');
+                } else {
+                    log(`Ошибка создания заказа: ${data.error}`, 'error');
+                }
+            } catch (error) {
+                log(`Ошибка создания заказа: ${error.message}`, 'error');
+            }
+        }
+        
+        // Инициализация
+        document.addEventListener('DOMContentLoaded', function() {
+            log('Страница отладки загружена');
+            checkAuthStatus();
+        });
+    </script>
+</body>
+</html> 

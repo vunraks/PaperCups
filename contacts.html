@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Контакты - EcoCups</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header>
+        <div class="logo">EcoCups</div>
+        <nav>
+            <ul>
+                <li><a href="index.html">Главная</a></li>
+                <li><a href="products.html">Товары</a></li>
+                <li><a href="about.html">О нас</a></li>
+                <li><a href="contacts.html" class="active">Контакты</a></li>
+                <li><a href="cart.html">Корзина (<span id="cart-count">0</span>)</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <main>
+        <h1>Наши контакты</h1>
+        
+        <div class="contacts-container">
+            <div class="contact-info">
+                <h2>Контактная информация</h2>
+                <p><strong>Адрес:</strong> г. Алматы, ул. Промышленная, д. 15</p>
+                <p><strong>Телефон:</strong> +7 (495) 123-45-67</p>
+                <p><strong>Email:</strong> info@ecocups.ru</p>
+                <p><strong>Режим работы:</strong> Пн-Пт: 9:00 - 18:00</p>
+            </div>
+            
+            <div class="contact-form">
+                <h2>Напишите нам</h2>
+                <form>
+                    <input type="text" placeholder="Ваше имя" required>
+                    <input type="email" placeholder="Ваш email" required>
+                    <input type="tel" placeholder="Ваш телефон">
+                    <textarea placeholder="Ваше сообщение" required></textarea>
+                    <button type="submit">Отправить</button>
+                </form>
+            </div>
+        </div>
+        
+        <div class="map">
+            <iframe src="https://yandex.ru/map-widget/v1/?um=constructor%3A1a2b3c4d5e6f7g8h9i0j&amp;source=constructor" width="100%" height="400" frameborder="0"></iframe>
+        </div>
+    </main>
+
+    <footer>
+        <p>&copy; 2023 EcoCups. Все права защищены.</p>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html>

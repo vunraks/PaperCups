@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Личный кабинет - EcoCups</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        .profile-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .profile-header {
+            background: #f8f9fa;
+            padding: 30px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+        }
+        
+        .profile-info {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        
+        .info-group {
+            margin-bottom: 15px;
+        }
+        
+        .info-label {
+            font-weight: bold;
+            color: #666;
+            margin-bottom: 5px;
+        }
+        
+        .info-value {
+            font-size: 16px;
+            color: #333;
+        }
+        
+        .orders-section {
+            background: white;
+            border-radius: 10px;
+            padding: 30px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .order-card {
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            background: #f9f9f9;
+        }
+        
+        .order-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .order-id {
+            font-weight: bold;
+            color: #007bff;
+        }
+        
+        .order-status {
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        
+        .status-pending { background: #fff3cd; color: #856404; }
+        .status-confirmed { background: #d1ecf1; color: #0c5460; }
+        .status-shipped { background: #d4edda; color: #155724; }
+        .status-delivered { background: #c3e6cb; color: #155724; }
+        
+        .order-items {
+            margin: 15px 0;
+        }
+        
+        .order-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .order-item:last-child {
+            border-bottom: none;
+        }
+        
+        .order-total {
+            text-align: right;
+            font-weight: bold;
+            font-size: 18px;
+            color: #007bff;
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 2px solid #007bff;
+        }
+        
+        .no-orders {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+        
+        .logout-btn {
+            background: #dc3545;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        
+        .logout-btn:hover {
+            background: #c82333;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+        
+        .error-message {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="logo">EcoCups</div>
+        <nav>
+            <ul>
+                <li><a href="index.html">Главная</a></li>
+                <li><a href="products.html">Товары</a></li>
+                <li><a href="about.html">О нас</a></li>
+                <li><a href="contacts.html">Контакты</a></li>
+                <li><a href="cart.html">Корзина (<span id="cart-count">0</span>)</a></li>
+                <li><a href="profile.html" class="active">Личный кабинет</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <main class="profile-container">
+        <div class="profile-header">
+            <h1>Личный кабинет</h1>
+            <div id="profile-info" class="profile-info">
+                <div class="loading">Загрузка информации...</div>
+            </div>
+            <button id="logout-btn" class="logout-btn">Выйти</button>
+        </div>
+        
+        <div class="orders-section">
+            <h2>История заказов</h2>
+            <div id="orders-list">
+                <div class="loading">Загрузка заказов...</div>
+            </div>
+        </div>
+    </main>
+
+    <footer>
+        <p>&copy; 2023 EcoCups. Все права защищены.</p>
+    </footer>
+
+    <script>
+        const API_BASE_URL = "http://127.0.0.1:8000/api";
+        
+        // Проверка аутентификации
+        function checkAuth() {
+            const token = localStorage.getItem('access_token');
+            if (!token) {
+                window.location.href = 'login.html';
+                return false;
+            }
+            return true;
+        }
+        
+        // Получение данных пользователя
+        async function loadUserProfile() {
+            if (!checkAuth()) return;
+            
+            try {
+                const response = await fetch(`${API_BASE_URL}/user/`, {
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('access_token')}`
+                    }
+                });
+                
+                if (!response.ok) {
+                    throw new Error('Ошибка получения данных пользователя');
+                }
+                
+                const userData = await response.json();
+                displayUserInfo(userData);
+            } catch (error) {
+                console.error('Error loading user profile:', error);
+                showError('Ошибка загрузки профиля. Попробуйте войти заново.');
+                localStorage.removeItem('access_token');
+                localStorage.removeItem('refresh_token');
+                setTimeout(() => {
+                    window.location.href = 'login.html';
+                }, 2000);
+            }
+        }
+        
+        // Отображение информации о пользователе
+        function displayUserInfo(userData) {
+            const profileInfo = document.getElementById('profile-info');
+            profileInfo.innerHTML = `
+                <div>
+                    <div class="info-group">
+                        <div class="info-label">Имя пользователя</div>
+                        <div class="info-value">${userData.username}</div>
+                    </div>
+                    <div class="info-group">
+                        <div class="info-label">Email</div>
+                        <div class="info-value">${userData.email}</div>
+                    </div>
+                </div>
+                <div>
+                    <div class="info-group">
+                        <div class="info-label">Телефон</div>
+                        <div class="info-value">${userData.phone || 'Не указан'}</div>
+                    </div>
+                    <div class="info-group">
+                        <div class="info-label">Дата регистрации</div>
+                        <div class="info-value">${new Date().toLocaleDateString()}</div>
+                    </div>
+                </div>
+            `;
+        }
+        
+        // Загрузка заказов пользователя
+        async function loadUserOrders() {
+            if (!checkAuth()) return;
+            
+            try {
+                const response = await fetch(`${API_BASE_URL}/orders/`, {
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('access_token')}`
+                    }
+                });
+                
+                if (!response.ok) {
+                    throw new Error('Ошибка получения заказов');
+                }
+                
+                const orders = await response.json();
+                displayOrders(orders);
+            } catch (error) {
+                console.error('Error loading orders:', error);
+                showError('Ошибка загрузки заказов.');
+            }
+        }
+        
+        // Отображение заказов
+        function displayOrders(orders) {
+            const ordersList = document.getElementById('orders-list');
+            
+            if (orders.length === 0) {
+                ordersList.innerHTML = `
+                    <div class="no-orders">
+                        <h3>У вас пока нет заказов</h3>
+                        <p>Сделайте свой первый заказ в нашем каталоге!</p>
+                        <a href="products.html" class="btn">Перейти к товарам</a>
+                    </div>
+                `;
+                return;
+            }
+            
+            ordersList.innerHTML = orders.map(order => `
+                <div class="order-card">
+                    <div class="order-header">
+                        <div>
+                            <span class="order-id">Заказ №${order.id}</span>
+                            <span class="order-date">${new Date(order.created_at).toLocaleDateString()}</span>
+                        </div>
+                        <span class="order-status status-${order.status}">${getStatusText(order.status)}</span>
+                    </div>
+                    
+                    <div class="order-items">
+                        ${order.items.map(item => `
+                            <div class="order-item">
+                                <span>${item.product_name}</span>
+                                <span>${item.quantity} шт. × ${item.price} руб. = ${item.quantity * item.price} руб.</span>
+                            </div>
+                        `).join('')}
+                    </div>
+                    
+                    <div class="order-total">
+                        Итого: ${order.total_amount} руб.
+                    </div>
+                    
+                    <div style="margin-top: 15px; font-size: 14px; color: #666;">
+                        <strong>Адрес доставки:</strong> ${order.shipping_address}
+                    </div>
+                </div>
+            `).join('');
+        }
+        
+        // Получение текста статуса
+        function getStatusText(status) {
+            const statusMap = {
+                'pending': 'Ожидает подтверждения',
+                'confirmed': 'Подтвержден',
+                'shipped': 'Отправлен',
+                'delivered': 'Доставлен'
+            };
+            return statusMap[status] || status;
+        }
+        
+        // Показ ошибки
+        function showError(message) {
+            const ordersList = document.getElementById('orders-list');
+            ordersList.innerHTML = `<div class="error-message">${message}</div>`;
+        }
+        
+        // Обновление счетчика корзины
+        function updateCartCount() {
+            const cart = JSON.parse(localStorage.getItem('cart')) || [];
+            const count = cart.reduce((total, item) => total + item.quantity, 0);
+            document.querySelectorAll('#cart-count').forEach(el => {
+                el.textContent = count;
+            });
+        }
+        
+        // Выход из системы
+        function logout() {
+            localStorage.removeItem('access_token');
+            localStorage.removeItem('refresh_token');
+            localStorage.removeItem('cart');
+            window.location.href = 'index.html';
+        }
+        
+        // Инициализация
+        document.addEventListener('DOMContentLoaded', function() {
+            updateCartCount();
+            loadUserProfile();
+            loadUserOrders();
+            
+            // Обработчик кнопки выхода
+            document.getElementById('logout-btn').addEventListener('click', logout);
+        });
+    </script>
+</body>
+</html> 
