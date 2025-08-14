@@ -1,6 +1,5 @@
-const API_BASE_URL = "http://127.0.0.1:8000/api";
+// cart.js — логика корзины EcoCups
 
-// === Локальная корзина ===
 function getCart() {
     return JSON.parse(localStorage.getItem('cart')) || [];
 }
@@ -66,51 +65,50 @@ function updateCartDisplay() {
     const checkoutBtn = document.getElementById('checkout-btn');
     const totalItemsEl = document.getElementById('total-items');
     const totalPriceEl = document.getElementById('total-price');
+    if (!cartItemsContainer) return;
     if (cart.length === 0) {
         if (emptyCartRow) emptyCartRow.style.display = '';
         if (checkoutBtn) checkoutBtn.disabled = true;
         if (totalItemsEl) totalItemsEl.textContent = '0';
         if (totalPriceEl) totalPriceEl.textContent = '0 руб.';
-        if (cartItemsContainer) cartItemsContainer.innerHTML = '<tr class="empty-cart"><td colspan="5">Ваша корзина пуста</td></tr>';
+        cartItemsContainer.innerHTML = '<tr class="empty-cart"><td colspan="5">Ваша корзина пуста</td></tr>';
         return;
     }
     if (emptyCartRow) emptyCartRow.style.display = 'none';
     if (checkoutBtn) checkoutBtn.disabled = false;
-    if (cartItemsContainer) {
-        cartItemsContainer.innerHTML = '';
-        let totalItems = 0;
-        let totalPrice = 0;
-        cart.forEach(item => {
-            const itemTotal = item.price * item.quantity;
-            totalItems += item.quantity;
-            totalPrice += itemTotal;
-            const row = document.createElement('tr');
-            row.innerHTML = `
-                <td>${item.name}</td>
-                <td>${item.price} руб.</td>
-                <td>
-                    <div class="quantity-control">
-                        <button class="decrease-qty" data-id="${item.id}">-</button>
-                        <input type="number" value="${item.quantity}" min="1" class="item-qty" data-id="${item.id}">
-                        <button class="increase-qty" data-id="${item.id}">+</button>
-                    </div>
-                </td>
-                <td class="item-total">${itemTotal} руб.</td>
-                <td><span class="remove-item" data-id="${item.id}">×</span></td>
-            `;
-            cartItemsContainer.appendChild(row);
-        });
-        const totalRow = document.createElement('tr');
-        totalRow.className = 'total-row';
-        totalRow.innerHTML = `
-            <td colspan="3" class="text-right"><strong>Итого:</strong></td>
-            <td colspan="2"><strong>${totalPrice} руб.</strong></td>
+    cartItemsContainer.innerHTML = '';
+    let totalItems = 0;
+    let totalPrice = 0;
+    cart.forEach(item => {
+        const itemTotal = item.price * item.quantity;
+        totalItems += item.quantity;
+        totalPrice += itemTotal;
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td>${item.name}</td>
+            <td>${item.price} руб.</td>
+            <td>
+                <div class="quantity-control">
+                    <button class="decrease-qty" data-id="${item.id}">-</button>
+                    <input type="number" value="${item.quantity}" min="1" class="item-qty" data-id="${item.id}">
+                    <button class="increase-qty" data-id="${item.id}">+</button>
+                </div>
+            </td>
+            <td class="item-total">${itemTotal} руб.</td>
+            <td><span class="remove-item" data-id="${item.id}">×</span></td>
         `;
-        cartItemsContainer.appendChild(totalRow);
-        if (totalItemsEl) totalItemsEl.textContent = totalItems;
-        if (totalPriceEl) totalPriceEl.textContent = `${totalPrice} руб.`;
-        addCartEventListeners();
-    }
+        cartItemsContainer.appendChild(row);
+    });
+    const totalRow = document.createElement('tr');
+    totalRow.className = 'total-row';
+    totalRow.innerHTML = `
+        <td colspan="3" class="text-right"><strong>Итого:</strong></td>
+        <td colspan="2"><strong>${totalPrice} руб.</strong></td>
+    `;
+    cartItemsContainer.appendChild(totalRow);
+    if (totalItemsEl) totalItemsEl.textContent = totalItems;
+    if (totalPriceEl) totalPriceEl.textContent = `${totalPrice} руб.`;
+    addCartEventListeners();
 }
 function updateTotalPrice() {
     const cart = getCart();
@@ -159,7 +157,18 @@ function addCartEventListeners() {
         });
     });
 }
-
-document.addEventListener('DOMContentLoaded', function() {
-    if (typeof cartInit === 'function') cartInit();
-});
+// Для инициализации на страницах:
+function cartInit() {
+    updateCartCount();
+    if (window.location.pathname.includes('cart.html')) {
+        updateCartDisplay();
+        const checkoutBtn = document.getElementById('checkout-btn');
+        if (checkoutBtn) {
+            checkoutBtn.addEventListener('click', function() {
+                alert('Заказ оформлен! Спасибо за покупку.');
+                clearCart();
+                window.location.href = 'index.html';
+            });
+        }
+    }
+}
