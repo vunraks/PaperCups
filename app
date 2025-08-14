@@ -51,16 +51,7 @@ class OrderItem(db.Model):
     quantity = db.Column(db.Integer, nullable=False)
     price = db.Column(db.Float, nullable=False)
 
-class CartItem(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    product_id = db.Column(db.Integer, db.ForeignKey('product.id'), nullable=False)
-    quantity = db.Column(db.Integer, nullable=False, default=1)
-    created_at = db.Column(db.DateTime, default=datetime.datetime.utcnow)
-    
-    # Связи с другими таблицами
-    user = db.relationship('User', backref='cart_items')
-    product = db.relationship('Product', backref='cart_items')
+
 
 # Функция для проверки JWT токена
 def token_required(f):
@@ -285,18 +276,13 @@ def create_order(current_user):
     if not data or not data.get('shipping_address'):
         return jsonify({'error': 'Необходим адрес доставки'}), 400
     
-    # Получаем товары из корзины пользователя
-    cart_items = CartItem.query.filter_by(user_id=current_user.id).all()
-    
-    if not cart_items:
+    if not data.get('items') or len(data['items']) == 0:
         return jsonify({'error': 'Корзина пуста'}), 400
     
     # Создание заказа
     total_amount = 0
-    for cart_item in cart_items:
-        product = Product.query.get(cart_item.product_id)
-        if product:
-            total_amount += product.price * cart_item.quantity
+    for item in data['items']:
+        total_amount += item['price'] * item['quantity']
     
     order = Order(
         user_id=current_user.id,
@@ -308,20 +294,15 @@ def create_order(current_user):
     db.session.add(order)
     db.session.flush()  # Получаем ID заказа
     
-    # Добавление товаров в заказ из корзины
-    for cart_item in cart_items:
-        product = Product.query.get(cart_item.product_id)
-        if product:
-            order_item = OrderItem(
-                order_id=order.id,
-                product_id=cart_item.product_id,
-                quantity=cart_item.quantity,
-                price=product.price
-            )
-            db.session.add(order_item)
-    
-    # Очищаем корзину после создания заказа
-    CartItem.query.filter_by(user_id=current_user.id).delete()
+    # Добавление товаров в заказ
+    for item in data['items']:
+        order_item = OrderItem(
+            order_id=order.id,
+            product_id=item['product_id'],
+            quantity=item['quantity'],
+            price=item['price']
+        )
+        db.session.add(order_item)
     
     db.session.commit()
     
@@ -358,118 +339,7 @@ def get_user_orders(current_user):
     
     return jsonify(result)
 
-@app.route('/api/cart/', methods=['GET'])
-@token_required
-def get_cart(current_user):
-    """Получить содержимое корзины пользователя"""
-    cart_items = CartItem.query.filter_by(user_id=current_user.id).all()
-    
-    result = []
-    for item in cart_items:
-        product = Product.query.get(item.product_id)
-        if product:
-            result.append({
-                'id': item.id,
-                'product_id': item.product_id,
-                'name': product.name,
-                'price': product.price,
-                'image': product.image,
-                'quantity': item.quantity,
-                'total': product.price * item.quantity
-            })
-    
-    return jsonify(result)
 
-@app.route('/api/cart/', methods=['POST'])
-@token_required
-def add_to_cart(current_user):
-    """Добавить товар в корзину"""
-    data = request.get_json()
-    
-    if not data or not data.get('product_id'):
-        return jsonify({'error': 'Необходим ID товара'}), 400
-    
-    product_id = data['product_id']
-    quantity = data.get('quantity', 1)
-    
-    # Проверяем существование товара
-    product = Product.query.get(product_id)
-    if not product:
-        return jsonify({'error': 'Товар не найден'}), 404
-    
-    # Проверяем, есть ли уже такой товар в корзине
-    existing_item = CartItem.query.filter_by(
-        user_id=current_user.id, 
-        product_id=product_id
-    ).first()
-    
-    if existing_item:
-        # Увеличиваем количество
-        existing_item.quantity += quantity
-    else:
-        # Создаем новый элемент корзины
-        cart_item = CartItem(
-            user_id=current_user.id,
-            product_id=product_id,
-            quantity=quantity
-        )
-        db.session.add(cart_item)
-    
-    db.session.commit()
-    
-    return jsonify({'message': 'Товар добавлен в корзину'})
-
-@app.route('/api/cart/<int:cart_item_id>/', methods=['PUT'])
-@token_required
-def update_cart_item(current_user, cart_item_id):
-    """Обновить количество товара в корзине"""
-    data = request.get_json()
-    
-    if not data or 'quantity' not in data:
-        return jsonify({'error': 'Необходимо указать количество'}), 400
-    
-    quantity = data['quantity']
-    if quantity < 1:
-        return jsonify({'error': 'Количество должно быть больше 0'}), 400
-    
-    cart_item = CartItem.query.filter_by(
-        id=cart_item_id, 
-        user_id=current_user.id
-    ).first()
-    
-    if not cart_item:
-        return jsonify({'error': 'Элемент корзины не найден'}), 404
-    
-    cart_item.quantity = quantity
-    db.session.commit()
-    
-    return jsonify({'message': 'Количество обновлено'})
-
-@app.route('/api/cart/<int:cart_item_id>/', methods=['DELETE'])
-@token_required
-def remove_from_cart(current_user, cart_item_id):
-    """Удалить товар из корзины"""
-    cart_item = CartItem.query.filter_by(
-        id=cart_item_id, 
-        user_id=current_user.id
-    ).first()
-    
-    if not cart_item:
-        return jsonify({'error': 'Элемент корзины не найден'}), 404
-    
-    db.session.delete(cart_item)
-    db.session.commit()
-    
-    return jsonify({'message': 'Товар удален из корзины'})
-
-@app.route('/api/cart/clear/', methods=['DELETE'])
-@token_required
-def clear_cart(current_user):
-    """Очистить корзину пользователя"""
-    CartItem.query.filter_by(user_id=current_user.id).delete()
-    db.session.commit()
-    
-    return jsonify({'message': 'Корзина очищена'})
 
 # Обработчик ошибок
 @app.errorhandler(404)
