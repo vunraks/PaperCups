@@ -161,5 +161,211 @@ function addCartEventListeners() {
 }
 
 document.addEventListener('DOMContentLoaded', function() {
-    if (typeof cartInit === 'function') cartInit();
+    let cart = JSON.parse(localStorage.getItem('cart')) || [];
+
+    function updateCartCount() {
+        const count = cart.reduce((total, item) => total + item.quantity, 0);
+        document.querySelectorAll('#cart-count').forEach(el => {
+            el.textContent = count;
+        });
+    }
+
+    function updateCartDisplay() {
+        const cartItemsContainer = document.getElementById('cart-items');
+        const emptyCartRow = document.querySelector('.empty-cart');
+        const checkoutBtn = document.getElementById('checkout-btn');
+        const totalItemsEl = document.getElementById('total-items');
+        const totalPriceEl = document.getElementById('total-price');
+
+        if (!cartItemsContainer) return;
+
+        if (cart.length === 0) {
+            if (emptyCartRow) emptyCartRow.style.display = '';
+            if (checkoutBtn) checkoutBtn.disabled = true;
+            if (totalItemsEl) totalItemsEl.textContent = '0';
+            if (totalPriceEl) totalPriceEl.textContent = '0 руб.';
+            cartItemsContainer.innerHTML = '<tr class="empty-cart"><td colspan="5">Ваша корзина пуста</td></tr>';
+            return;
+        }
+
+        if (emptyCartRow) emptyCartRow.style.display = 'none';
+        if (checkoutBtn) checkoutBtn.disabled = false;
+
+        cartItemsContainer.innerHTML = '';
+        let totalItems = 0;
+        let totalPrice = 0;
+        cart.forEach(item => {
+            const itemTotal = item.price * item.quantity;
+            totalItems += item.quantity;
+            totalPrice += itemTotal;
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>${item.name}</td>
+                <td>${item.price} руб.</td>
+                <td>
+                    <div class="quantity-control">
+                        <button class="decrease-qty" data-id="${item.id}">-</button>
+                        <input type="number" value="${item.quantity}" min="1" class="item-qty" data-id="${item.id}">
+                        <button class="increase-qty" data-id="${item.id}">+</button>
+                    </div>
+                </td>
+                <td class="item-total">${itemTotal} руб.</td>
+                <td><span class="remove-item" data-id="${item.id}">×</span></td>
+            `;
+            cartItemsContainer.appendChild(row);
+        });
+        const totalRow = document.createElement('tr');
+        totalRow.className = 'total-row';
+        totalRow.innerHTML = `
+            <td colspan="3" class="text-right"><strong>Итого:</strong></td>
+            <td colspan="2"><strong>${totalPrice} руб.</strong></td>
+        `;
+        cartItemsContainer.appendChild(totalRow);
+        if (totalItemsEl) totalItemsEl.textContent = totalItems;
+        if (totalPriceEl) totalPriceEl.textContent = `${totalPrice} руб.`;
+        addCartEventListeners();
+    }
+
+    function addCartEventListeners() {
+        document.querySelectorAll('.decrease-qty').forEach(btn => {
+            btn.onclick = function() {
+                const id = parseInt(this.getAttribute('data-id'));
+                updateQuantity(id, -1);
+            };
+        });
+        document.querySelectorAll('.increase-qty').forEach(btn => {
+            btn.onclick = function() {
+                const id = parseInt(this.getAttribute('data-id'));
+                updateQuantity(id, 1);
+            };
+        });
+        document.querySelectorAll('.item-qty').forEach(input => {
+            input.onchange = function() {
+                const id = parseInt(this.getAttribute('data-id'));
+                const newQty = parseInt(this.value);
+                if (newQty > 0) {
+                    setQuantity(id, newQty);
+                } else {
+                    this.value = 1;
+                }
+            };
+            input.oninput = function() {
+                const id = parseInt(this.getAttribute('data-id'));
+                const newQty = parseInt(this.value);
+                if (newQty > 0) {
+                    setQuantity(id, newQty, true);
+                }
+            };
+        });
+        document.querySelectorAll('.remove-item').forEach(btn => {
+            btn.onclick = function() {
+                const id = parseInt(this.getAttribute('data-id'));
+                removeFromCart(id);
+            };
+        });
+    }
+
+    function addToCart(id, name, price, btn) {
+        const existingItem = cart.find(item => item.id === id);
+        if (existingItem) {
+            existingItem.quantity += 1;
+        } else {
+            cart.push({ id, name, price, quantity: 1 });
+        }
+        saveCart();
+        updateCartCount();
+        if (window.location.pathname.includes('cart.html')) {
+            updateCartDisplay();
+        }
+        if (btn) {
+            btn.textContent = 'Добавлено!';
+            btn.style.backgroundColor = '#4CAF50';
+            btn.disabled = true;
+            setTimeout(() => {
+                btn.textContent = 'В корзину';
+                btn.style.backgroundColor = '#2e8b57';
+                btn.disabled = false;
+            }, 1000);
+        }
+    }
+
+    function updateQuantity(id, change) {
+        const item = cart.find(item => item.id === id);
+        if (item) {
+            item.quantity += change;
+            if (item.quantity <= 0) {
+                cart = cart.filter(item => item.id !== id);
+            }
+            saveCart();
+            updateCartCount();
+            updateCartDisplay();
+        }
+    }
+
+    function setQuantity(id, quantity, isLiveUpdate = false) {
+        const item = cart.find(item => item.id === id);
+        if (item) {
+            item.quantity = quantity;
+            saveCart();
+            updateCartCount();
+            if (isLiveUpdate) {
+                const row = document.querySelector(`input.item-qty[data-id="${id}"]`).closest('tr');
+                if (row) {
+                    const itemTotal = item.price * item.quantity;
+                    row.querySelector('.item-total').textContent = `${itemTotal} руб.`;
+                    updateTotalPrice();
+                }
+            } else {
+                updateCartDisplay();
+            }
+        }
+    }
+
+    function updateTotalPrice() {
+        const totalPrice = cart.reduce((total, item) => total + (item.price * item.quantity), 0);
+        const totalPriceEl = document.getElementById('total-price');
+        if (totalPriceEl) totalPriceEl.textContent = `${totalPrice} руб.`;
+        document.querySelectorAll('.total-row td:last-child strong').forEach(el => {
+            el.textContent = `${totalPrice} руб.`;
+        });
+    }
+
+    function removeFromCart(id) {
+        cart = cart.filter(item => item.id !== id);
+        saveCart();
+        updateCartCount();
+        updateCartDisplay();
+    }
+
+    function saveCart() {
+        localStorage.setItem('cart', JSON.stringify(cart));
+    }
+
+    // Делегирование событий для всех кнопок .add-to-cart
+    document.body.addEventListener('click', function(e) {
+        const btn = e.target.closest('.add-to-cart');
+        if (btn) {
+            const id = parseInt(btn.getAttribute('data-id'));
+            const name = btn.getAttribute('data-name');
+            const price = parseInt(btn.getAttribute('data-price'));
+            addToCart(id, name, price, btn);
+        }
+    });
+
+    // Обработчик кнопки оформления заказа
+    const checkoutBtn = document.getElementById('checkout-btn');
+    if (checkoutBtn) {
+        checkoutBtn.addEventListener('click', function() {
+            alert('Заказ оформлен! Спасибо за покупку.');
+            cart = [];
+            saveCart();
+            updateCartCount();
+            updateCartDisplay();
+        });
+    }
+
+    updateCartCount();
+    if (window.location.pathname.includes('cart.html')) {
+        updateCartDisplay();
+    }
 });
