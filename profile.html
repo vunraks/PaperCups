@@ -151,7 +151,10 @@
                 <li><a href="about.html">О нас</a></li>
                 <li><a href="contacts.html">Контакты</a></li>
                 <li><a href="cart.html">Корзина (<span id="cart-count">0</span>)</a></li>
-                <li><a href="profile.html" class="active">Личный кабинет</a></li>
+                <li><a href="login.html" class="auth-link" id="login-link">Войти</a></li>
+                <li><a href="register.html" class="auth-link" id="register-link">Регистрация</a></li>
+                <li><a href="profile.html" class="protected" id="profile-link" style="display:none">Личный кабинет</a></li>
+                <li><a href="#" class="protected" id="logout-link" style="display:none">Выйти</a></li>
             </ul>
         </nav>
     </header>
@@ -177,27 +180,22 @@
         <p>&copy; 2023 EcoCups. Все права защищены.</p>
     </footer>
 
+    <script src="auth.js"></script>
     <script>
         const API_BASE_URL = "http://127.0.0.1:8000/api";
         
-        // Проверка аутентификации
-        function checkAuth() {
+        // Функция для загрузки профиля пользователя
+        async function loadUserProfile() {
             const token = localStorage.getItem('access_token');
             if (!token) {
                 window.location.href = 'login.html';
-                return false;
+                return;
             }
-            return true;
-        }
-        
-        // Получение данных пользователя
-        async function loadUserProfile() {
-            if (!checkAuth()) return;
             
             try {
                 const response = await fetch(`${API_BASE_URL}/user/`, {
                     headers: {
-                        'Authorization': `Bearer ${localStorage.getItem('access_token')}`
+                        'Authorization': `Bearer ${token}`
                     }
                 });
                 
@@ -247,12 +245,13 @@
         
         // Загрузка заказов пользователя
         async function loadUserOrders() {
-            if (!checkAuth()) return;
+            const token = localStorage.getItem('access_token');
+            if (!token) return;
             
             try {
                 const response = await fetch(`${API_BASE_URL}/orders/`, {
                     headers: {
-                        'Authorization': `Bearer ${localStorage.getItem('access_token')}`
+                        'Authorization': `Bearer ${token}`
                     }
                 });
                 
