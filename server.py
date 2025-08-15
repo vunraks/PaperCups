@@ -1,5 +1,4 @@
 from flask import Flask, request, jsonify, send_from_directory
-from flask_cors import CORS
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
 import jwt
@@ -14,35 +13,52 @@ app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///ecocups.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = SQLAlchemy(app)
-CORS(app, origins=["*"], supports_credentials=True)
+
+# Убираем CORS для локального проекта
+@app.after_request
+def after_request(response):
+    response.headers.add('Access-Control-Allow-Origin', '*')
+    response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
+    response.headers.add('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS')
+    return response
 
 # Модели базы данных
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(80), unique=True, nullable=False)
     email = db.Column(db.String(120), unique=True, nullable=False)
-    phone = db.Column(db.String(20), nullable=False)
-    password_hash = db.Column(db.String(200), nullable=False)
+    phone = db.Column(db.String(20))
+    password_hash = db.Column(db.String(128))
     created_at = db.Column(db.DateTime, default=datetime.datetime.utcnow)
+    is_active = db.Column(db.Boolean, default=True)
+    is_admin = db.Column(db.Boolean, default=False)
+    
+    # Связи
+    orders = db.relationship('Order', backref='user', lazy=True)
 
 class Product(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
     description = db.Column(db.Text)
     price = db.Column(db.Float, nullable=False)
-    image = db.Column(db.String(200))
     category = db.Column(db.String(50))
+    image_url = db.Column(db.String(200))
     stock = db.Column(db.Integer, default=0)
-    is_active = db.Column(db.Boolean, default=True)
+    created_at = db.Column(db.DateTime, default=datetime.datetime.utcnow)
+    
+    # Связи
+    order_items = db.relationship('OrderItem', backref='product', lazy=True)
 
 class Order(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     total_amount = db.Column(db.Float, nullable=False)
-    status = db.Column(db.String(20), default='pending')
-    created_at = db.Column(db.DateTime, default=datetime.datetime.utcnow)
+    status = db.Column(db.String(20), default='pending')  # pending, confirmed, shipped, delivered
     shipping_address = db.Column(db.Text)
-    phone = db.Column(db.String(20))
+    created_at = db.Column(db.DateTime, default=datetime.datetime.utcnow)
+    
+    # Связи
+    items = db.relationship('OrderItem', backref='order', lazy=True, cascade='all, delete-orphan')
 
 class OrderItem(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -88,53 +104,95 @@ def init_db():
     with app.app_context():
         db.create_all()
         
+        # Создаем админа по умолчанию, если его нет
+        admin = User.query.filter_by(email='admin@ecocups.ru').first()
+        if not admin:
+            admin = User(
+                username='admin',
+                email='admin@ecocups.ru',
+                phone='+7 (999) 123-45-67',
+                password_hash=generate_password_hash('admin123'),
+                is_admin=True,
+                is_active=True
+            )
+            db.session.add(admin)
+            db.session.commit()
+            print("Админ создан: admin@ecocups.ru / admin123")
+        
         # Добавляем тестовые товары, если их нет
-        if not Product.query.first():
-            products = [
-                {
-                    'name': 'Стаканчик 200мл',
-                    'description': 'Экологичный бумажный стаканчик объемом 200мл',
-                    'price': 5.0,
-                    'image': 'cup200.png',
-                    'category': 'cups',
-                    'stock': 1000
-                },
-                {
-                    'name': 'Стаканчик 300мл',
-                    'description': 'Экологичный бумажный стаканчик объемом 300мл',
-                    'price': 7.0,
-                    'image': 'cup300.png',
-                    'category': 'cups',
-                    'stock': 1000
-                },
-                {
-                    'name': 'Стаканчик 400мл',
-                    'description': 'Экологичный бумажный стаканчик объемом 400мл',
-                    'price': 9.0,
-                    'image': 'cup400.png',
-                    'category': 'cups',
-                    'stock': 1000
-                },
-                {
-                    'name': 'Крышки для стаканчиков',
-                    'description': 'Пластиковые крышки для бумажных стаканчиков',
-                    'price': 3.0,
-                    'image': 'lids.png',
-                    'category': 'accessories',
-                    'stock': 2000
-                }
+        if Product.query.count() == 0:
+            test_products = [
+                Product(
+                    name='Стаканчик 200мл',
+                    description='Экологичный бумажный стаканчик объемом 200мл',
+                    price=5.0,
+                    category='cups',
+                    image_url='images/cup200.png',
+                    stock=1000
+                ),
+                Product(
+                    name='Стаканчик 300мл',
+                    description='Экологичный бумажный стаканчик объемом 300мл',
+                    price=7.0,
+                    category='cups',
+                    image_url='images/cup300.png',
+                    stock=1000
+                ),
+                Product(
+                    name='Стаканчик 400мл',
+                    description='Экологичный бумажный стаканчик объемом 400мл',
+                    price=9.0,
+                    category='cups',
+                    image_url='images/cup400.png',
+                    stock=1000
+                ),
+                Product(
+                    name='Крышки для стаканчиков',
+                    description='Пластиковые крышки для бумажных стаканчиков',
+                    price=3.0,
+                    category='lids',
+                    image_url='images/lids.png',
+                    stock=2000
+                )
             ]
             
-            for product_data in products:
-                product = Product(**product_data)
+            for product in test_products:
                 db.session.add(product)
             
             db.session.commit()
+            print("Тестовые товары добавлены")
 
 # Тестовый endpoint
 @app.route('/api/test/', methods=['GET'])
 def test():
     return jsonify({'message': 'Сервер работает!', 'status': 'ok'})
+
+# Временный endpoint для проверки пользователей
+@app.route('/api/debug/users/', methods=['GET'])
+def debug_users():
+    users = User.query.all()
+    users_data = []
+    for user in users:
+        users_data.append({
+            'id': user.id,
+            'username': user.username,
+            'email': user.email,
+            'is_admin': user.is_admin,
+            'is_active': user.is_active
+        })
+    return jsonify(users_data)
+
+# Временный endpoint для назначения прав администратора
+@app.route('/api/debug/make-admin/<email>/', methods=['POST'])
+def make_admin(email):
+    user = User.query.filter_by(email=email).first()
+    if user:
+        user.is_admin = True
+        user.is_active = True
+        db.session.commit()
+        return jsonify({'message': f'Пользователь {email} назначен администратором'})
+    else:
+        return jsonify({'error': 'Пользователь не найден'}), 404
 
 # API маршруты
 
@@ -142,113 +200,136 @@ def test():
 def register():
     data = request.get_json()
     
-    # Проверка обязательных полей
-    required_fields = ['username', 'email', 'phone', 'password', 'password2']
+    # Проверяем обязательные поля
+    required_fields = ['username', 'email', 'password', 'password2']
     for field in required_fields:
-        if field not in data:
+        if not data.get(field):
             return jsonify({'error': f'Поле {field} обязательно'}), 400
     
-    # Проверка совпадения паролей
+    # Проверяем совпадение паролей
     if data['password'] != data['password2']:
         return jsonify({'error': 'Пароли не совпадают'}), 400
     
-    # Проверка существования пользователя
+    # Проверяем длину пароля
+    if len(data['password']) < 6:
+        return jsonify({'error': 'Пароль должен содержать минимум 6 символов'}), 400
+    
+    # Проверяем, существует ли пользователь с таким email
     if User.query.filter_by(email=data['email']).first():
         return jsonify({'error': 'Пользователь с таким email уже существует'}), 400
     
+    # Проверяем, существует ли пользователь с таким username
     if User.query.filter_by(username=data['username']).first():
         return jsonify({'error': 'Пользователь с таким именем уже существует'}), 400
     
-    # Создание нового пользователя
-    hashed_password = generate_password_hash(data['password'])
-    new_user = User(
-        username=data['username'],
-        email=data['email'],
-        phone=data['phone'],
-        password_hash=hashed_password
-    )
-    
-    db.session.add(new_user)
-    db.session.commit()
-    
-    # Генерация токенов
-    access_token = jwt.encode(
-        {
-            'user_id': new_user.id,
-            'exp': datetime.datetime.utcnow() + datetime.timedelta(hours=24)
-        },
-        app.config['SECRET_KEY'],
-        algorithm="HS256"
-    )
-    
-    refresh_token = jwt.encode(
-        {
-            'user_id': new_user.id,
-            'exp': datetime.datetime.utcnow() + datetime.timedelta(days=30)
-        },
-        app.config['SECRET_KEY'],
-        algorithm="HS256"
-    )
-    
-    return jsonify({
-        'access': access_token,
-        'refresh': refresh_token,
-        'user': {
-            'id': new_user.id,
-            'username': new_user.username,
-            'email': new_user.email
-        }
-    }), 201
+    try:
+        # Создаем нового пользователя
+        user = User(
+            username=data['username'],
+            email=data['email'],
+            phone=data.get('phone', ''),
+            password_hash=generate_password_hash(data['password']),
+            is_admin=False,  # По умолчанию обычный пользователь
+            is_active=True
+        )
+        
+        db.session.add(user)
+        db.session.commit()
+        
+        # Генерируем JWT токены
+        access_token = jwt.encode(
+            {
+                'user_id': user.id,
+                'exp': datetime.datetime.utcnow() + datetime.timedelta(hours=24)
+            },
+            app.config['SECRET_KEY'],
+            algorithm="HS256"
+        )
+        
+        refresh_token = jwt.encode(
+            {
+                'user_id': user.id,
+                'exp': datetime.datetime.utcnow() + datetime.timedelta(days=30)
+            },
+            app.config['SECRET_KEY'],
+            algorithm="HS256"
+        )
+        
+        return jsonify({
+            'access': access_token,
+            'refresh': refresh_token,
+            'user': {
+                'id': user.id,
+                'username': user.username,
+                'email': user.email,
+                'phone': user.phone,
+                'is_admin': user.is_admin,
+                'is_active': user.is_active
+            }
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
 
 @app.route('/api/login/', methods=['POST'])
 def login():
     data = request.get_json()
     
-    if not data or not data.get('email') or not data.get('password'):
+    if not data.get('email') or not data.get('password'):
         return jsonify({'error': 'Email и пароль обязательны'}), 400
     
     user = User.query.filter_by(email=data['email']).first()
     
-    if not user or not check_password_hash(user.password_hash, data['password']):
+    if user and check_password_hash(user.password_hash, data['password']):
+        if not user.is_active:
+            return jsonify({'error': 'Аккаунт заблокирован'}), 403
+        
+        # Генерируем JWT токены
+        access_token = jwt.encode(
+            {
+                'user_id': user.id,
+                'exp': datetime.datetime.utcnow() + datetime.timedelta(hours=24)
+            },
+            app.config['SECRET_KEY'],
+            algorithm="HS256"
+        )
+        
+        refresh_token = jwt.encode(
+            {
+                'user_id': user.id,
+                'exp': datetime.datetime.utcnow() + datetime.timedelta(days=30)
+            },
+            app.config['SECRET_KEY'],
+            algorithm="HS256"
+        )
+        
+        return jsonify({
+            'access': access_token,
+            'refresh': refresh_token,
+            'user': {
+                'id': user.id,
+                'username': user.username,
+                'email': user.email,
+                'phone': user.phone,
+                'is_admin': user.is_admin,
+                'is_active': user.is_active
+            }
+        })
+    else:
         return jsonify({'error': 'Неверный email или пароль'}), 401
-    
-    # Генерация токенов
-    access_token = jwt.encode(
-        {
-            'user_id': user.id,
-            'exp': datetime.datetime.utcnow() + datetime.timedelta(hours=24)
-        },
-        app.config['SECRET_KEY'],
-        algorithm="HS256"
-    )
-    
-    refresh_token = jwt.encode(
-        {
-            'user_id': user.id,
-            'exp': datetime.datetime.utcnow() + datetime.timedelta(days=30)
-        },
-        app.config['SECRET_KEY'],
-        algorithm="HS256"
-    )
-    
-    return jsonify({
-        'access': access_token,
-        'refresh': refresh_token,
-        'user': {
-            'id': user.id,
-            'username': user.username,
-            'email': user.email
-        }
-    })
 
 @app.route('/api/user/', methods=['GET'])
 @token_required
-def get_user(current_user):
+def get_user_profile(current_user):
     return jsonify({
         'id': current_user.id,
         'username': current_user.username,
         'email': current_user.email,
-        'phone': current_user.phone
+        'phone': current_user.phone,
+        'is_admin': current_user.is_admin,
+        'is_active': current_user.is_active,
+        'created_at': current_user.created_at.isoformat()
     })
 
 @app.route('/api/products/', methods=['GET'])
@@ -538,6 +619,158 @@ def serve_static(filename):
 @app.route('/images/<path:filename>')
 def serve_images(filename):
     return send_from_directory('images', filename)
+
+# ===== АДМИН ЭНДПОИНТЫ =====
+
+@app.route('/api/admin/stats/', methods=['GET'])
+@token_required
+def admin_stats(current_user):
+    try:
+        # Проверяем права администратора
+        if not current_user.is_admin:
+            return jsonify({'error': 'Доступ запрещен'}), 403
+        
+        # Получаем статистику
+        total_users = User.query.count()
+        total_orders = Order.query.count()
+        total_products = Product.query.count()
+        
+        # Считаем общую выручку
+        orders = Order.query.filter_by(status='delivered').all()
+        total_revenue = sum(order.total_amount for order in orders)
+        
+        return jsonify({
+            'total_users': total_users,
+            'total_orders': total_orders,
+            'total_revenue': total_revenue,
+            'total_products': total_products
+        })
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/admin/users/', methods=['GET'])
+@token_required
+def admin_users(current_user):
+    try:
+        # Проверяем права администратора
+        if not current_user.is_admin:
+            return jsonify({'error': 'Доступ запрещен'}), 403
+        
+        users = User.query.all()
+        users_data = []
+        
+        for user in users:
+            users_data.append({
+                'id': user.id,
+                'username': user.username,
+                'email': user.email,
+                'phone': user.phone,
+                'created_at': user.created_at.isoformat(),
+                'is_active': user.is_active,
+                'is_admin': user.is_admin
+            })
+        
+        return jsonify(users_data)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/admin/orders/', methods=['GET'])
+@token_required
+def admin_orders(current_user):
+    try:
+        # Проверяем права администратора
+        if not current_user.is_admin:
+            return jsonify({'error': 'Доступ запрещен'}), 403
+        
+        orders = Order.query.all()
+        orders_data = []
+        
+        for order in orders:
+            order_items = []
+            for item in order.items:
+                order_items.append({
+                    'product_name': item.product.name,
+                    'quantity': item.quantity,
+                    'price': item.price
+                })
+            
+            orders_data.append({
+                'id': order.id,
+                'user_username': order.user.username,
+                'items': order_items,
+                'total_amount': order.total_amount,
+                'status': order.status,
+                'created_at': order.created_at.isoformat(),
+                'shipping_address': order.shipping_address
+            })
+        
+        return jsonify(orders_data)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/admin/products/', methods=['GET', 'POST'])
+@token_required
+def admin_products(current_user):
+    try:
+        # Проверяем права администратора
+        if not current_user.is_admin:
+            return jsonify({'error': 'Доступ запрещен'}), 403
+        
+        if request.method == 'GET':
+            # Получить все товары
+            products = Product.query.all()
+            products_data = []
+            
+            for product in products:
+                products_data.append({
+                    'id': product.id,
+                    'name': product.name,
+                    'description': product.description,
+                    'price': product.price,
+                    'category': product.category,
+                    'image_url': product.image_url,
+                    'stock': product.stock,
+                    'created_at': product.created_at.isoformat()
+                })
+            
+            return jsonify(products_data)
+        
+        elif request.method == 'POST':
+            # Добавить новый товар
+            data = request.get_json()
+            
+            new_product = Product(
+                name=data['name'],
+                description=data['description'],
+                price=data['price'],
+                category=data['category'],
+                image_url=data['image_url'],
+                stock=data['stock']
+            )
+            
+            db.session.add(new_product)
+            db.session.commit()
+            
+            return jsonify({'message': 'Товар успешно добавлен', 'id': new_product.id}), 201
+            
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/admin/products/<int:product_id>/', methods=['DELETE'])
+@token_required
+def admin_delete_product(current_user, product_id):
+    try:
+        # Проверяем права администратора
+        if not current_user.is_admin:
+            return jsonify({'error': 'Доступ запрещен'}), 403
+        
+        product = Product.query.get_or_404(product_id)
+        db.session.delete(product)
+        db.session.commit()
+        
+        return jsonify({'message': 'Товар успешно удален'})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':
     init_db()

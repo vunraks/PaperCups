@@ -197,6 +197,23 @@ function updateAuthUI(isAuthenticated) {
       logoutLink.style.display = "block";
       logoutLink.onclick = logout;
     }
+    
+    // Добавляем ссылку на админ-панель для администраторов
+    if (user && user.is_admin) {
+      let adminLink = document.getElementById("admin-link");
+      if (!adminLink) {
+        // Создаем ссылку на админ-панель, если её нет
+        const nav = document.querySelector('nav ul');
+        if (nav) {
+          const li = document.createElement('li');
+          li.innerHTML = '<a href="admin.html" id="admin-link" class="admin-link">Админ-панель</a>';
+          nav.appendChild(li);
+        }
+      } else {
+        adminLink.style.display = "block";
+      }
+    }
+    
     console.log('[AuthUI] Пользователь авторизован:', user ? user.username : 'Неизвестно');
   } else {
     if (loginLink) {
@@ -214,6 +231,13 @@ function updateAuthUI(isAuthenticated) {
       profileLink.textContent = "Личный кабинет";
     }
     if (logoutLink) logoutLink.style.display = "none";
+    
+    // Скрываем ссылку на админ-панель
+    const adminLink = document.getElementById("admin-link");
+    if (adminLink) {
+      adminLink.style.display = "none";
+    }
+    
     console.log('[AuthUI] Пользователь не авторизован');
   }
 }
