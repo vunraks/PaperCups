@@ -471,6 +471,52 @@ def clear_cart(current_user):
     
     return jsonify({'message': 'Корзина очищена'})
 
+@app.route('/api/refresh/', methods=['POST'])
+def refresh_token():
+    data = request.get_json()
+    
+    if not data or not data.get('refresh'):
+        return jsonify({'error': 'Refresh token обязателен'}), 400
+    
+    try:
+        # Декодируем refresh token
+        payload = jwt.decode(data['refresh'], app.config['SECRET_KEY'], algorithms=["HS256"])
+        user_id = payload['user_id']
+        
+        # Проверяем, существует ли пользователь
+        user = User.query.filter_by(id=user_id).first()
+        if not user:
+            return jsonify({'error': 'Пользователь не найден'}), 401
+        
+        # Генерируем новые токены
+        access_token = jwt.encode(
+            {
+                'user_id': user.id,
+                'exp': datetime.datetime.utcnow() + datetime.timedelta(hours=24)
+            },
+            app.config['SECRET_KEY'],
+            algorithm="HS256"
+        )
+        
+        refresh_token = jwt.encode(
+            {
+                'user_id': user.id,
+                'exp': datetime.datetime.utcnow() + datetime.timedelta(days=30)
+            },
+            app.config['SECRET_KEY'],
+            algorithm="HS256"
+        )
+        
+        return jsonify({
+            'access': access_token,
+            'refresh': refresh_token
+        })
+        
+    except jwt.ExpiredSignatureError:
+        return jsonify({'error': 'Refresh token истек'}), 401
+    except jwt.InvalidTokenError:
+        return jsonify({'error': 'Неверный refresh token'}), 401
+
 # Обработчик ошибок
 @app.errorhandler(404)
 def not_found(error):
