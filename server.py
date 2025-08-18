@@ -334,13 +334,13 @@ def get_user_profile(current_user):
 
 @app.route('/api/products/', methods=['GET'])
 def get_products():
-    products = Product.query.filter_by(is_active=True).all()
+    products = Product.query.all()
     return jsonify([{
         'id': p.id,
         'name': p.name,
         'description': p.description,
         'price': p.price,
-        'image': p.image,
+        'image_url': p.image_url,
         'category': p.category,
         'stock': p.stock
     } for p in products])
@@ -353,7 +353,7 @@ def get_product(product_id):
         'name': product.name,
         'description': product.description,
         'price': product.price,
-        'image': product.image,
+        'image_url': product.image_url,
         'category': product.category,
         'stock': product.stock
     })
@@ -454,7 +454,7 @@ def get_cart(current_user):
                 'product_id': item.product_id,
                 'name': product.name,
                 'price': product.price,
-                'image': product.image,
+                'image_url': product.image_url,
                 'quantity': item.quantity,
                 'total': product.price * item.quantity
             })

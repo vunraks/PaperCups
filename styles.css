@@ -6,6 +6,13 @@
   font-family: "Arial", sans-serif;
 }
 
+/* Базовая адаптивность для всех изображений */
+img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+
 body {
   line-height: 1.6;
   color: #333;
@@ -85,6 +92,9 @@ footer {
   background-color: #e8f5e9;
   border-radius: 10px;
   margin-bottom: 2rem;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
 }
 
 .hero h1 {
@@ -137,16 +147,29 @@ footer {
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
   padding: 1.5rem;
   width: calc(25% - 1.5rem);
-  min-width: 250px;
+  min-width: 220px;
   text-align: center;
+  display: flex;
+  flex-direction: column;
 }
 
 .product img {
-  width: 350px;
-  height: 400px;
-  object-fit: cover;
+  width: 100%;
+  height: auto;
+  max-height: 320px;
+  object-fit: contain;
   border-radius: 5px;
   margin-bottom: 1rem;
+}
+
+/* Карточки внутри коллажа на главной */
+.promo-collage .product,
+.collage-grid .product {
+  width: 100%;
+  min-width: 0;
+}
+.collage-grid .product img {
+  max-height: 220px;
 }
 
 .product h3 {
@@ -169,6 +192,11 @@ footer {
   transition: background-color 0.3s;
 }
 
+/* Кнопка прижимается к низу карточки */
+.product .add-to-cart {
+  margin-top: auto;
+}
+
 .add-to-cart:hover {
   background-color: #3cb371;
 }
@@ -183,6 +211,7 @@ footer {
 
 .about-content img {
   width: 50%;
+  height: auto;
   border-radius: 10px;
 }
 
@@ -390,6 +419,26 @@ footer {
     width: 100%;
   }
 }
+
+/* Планшеты: по 2 карточки в ряд */
+@media (max-width: 1024px) {
+  .product {
+    width: calc(50% - 1.5rem);
+  }
+}
+
+/* Телефоны: по 1 карточке в ряд, компактнее баннер */
+@media (max-width: 600px) {
+  .product {
+    width: 100%;
+  }
+  .collage-grid .product img {
+    max-height: 180px;
+  }
+  .banner-content h3 {
+    font-size: 28px;
+  }
+}
 /* Популярные товары */
 .popular-products {
   margin-top: 3rem;
@@ -549,12 +598,12 @@ color: black;
 
 .banner-content h3 {
   margin-bottom: 0.5rem;
-  font-size: 70px;
+  font-size: 40px;
 }
 
 .banner-content h3 {
   margin-bottom: 0.5rem;
-  font-size: 70px;
+  font-size: 40px;
 }
 
 .btn-small {
@@ -595,13 +644,13 @@ color: black;
 }
 
 .product-card img {
-  width: 434px;
-  height: 300px;
+  width: 100%;
+  height: auto;
   object-fit: cover;
 }
 .product-card1 img {
-  width: 435px;
-  height: 420px;
+  width: 100%;
+  height: auto;
   object-fit: cover;
 }
 .product-info {
